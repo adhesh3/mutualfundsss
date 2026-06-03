@@ -1,0 +1,89 @@
+// Prisma schema for the Mutual Fund & NFO Analyzer.
+// Local single-user SQLite database. SQLite has no native enums, so
+// constrained fields are plain strings validated in app code (see src/lib/config.ts).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// A fund the user is tracking (watchlist). NFOs are funds with isNfo = true
+/// and no NAV history yet, so they are analyzed qualitatively.
+model Fund {
+  id                  String   @id @default(cuid())
+  amfiCode            String?  @unique
+  isin                String?
+  name                String
+  amc                 String?
+  category            String? // largecap | midcap | smallcap | flexicap | elss | hybrid | liquid | short_duration | corporate | gilt | index | other
+  assetClass          String? // equity | debt | hybrid | gold | other
+  isNfo               Boolean  @default(false)
+  nfoOpen             DateTime?
+  nfoClose            DateTime?
+  nfoMandate          String?
+  nfoTerPct           Float? // stated expense ratio at launch (no track record to verify)
+  fundManager         String?
+  benchmarkSchemeCode String?
+  notes               String?
+  isWatched           Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  holdings Holding[]
+}
+
+/// Time-boxed cache for external API responses (Kuvera, mfdata.in, mfapi.in).
+model ApiCache {
+  id        String   @id @default(cuid())
+  source    String // kuvera | mfdata | mfapi
+  cacheKey  String
+  payload   String // raw JSON string
+  fetchedAt DateTime @default(now())
+
+  @@unique([source, cacheKey])
+  @@index([source])
+}
+
+/// Single-user investor profile that drives allocation + recommendations.
+model InvestorProfile {
+  id               String   @id @default("default")
+  age              Int?
+  riskTolerance    String   @default("moderate") // conservative | moderate | aggressive
+  horizonYears     Int      @default(7)
+  targetEquityPct  Int      @default(60)
+  targetDebtPct    Int      @default(30)
+  targetGoldPct    Int      @default(10)
+  updatedAt        DateTime @updatedAt @default(now())
+}
+
+/// A position the user holds in a tracked fund.
+model Holding {
+  id             String   @id @default(cuid())
+  fundId         String
+  units          Float
+  avgCostNav     Float
+  investedAmount Float?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  fund Fund @relation(fields: [fundId], references: [id], onDelete: Cascade)
+
+  @@index([fundId])
+}
+
+/// Manually tracked fixed-income holdings (no good free Indian bond API).
+model FixedIncomeInstrument {
+  id           String    @id @default(cuid())
+  kind         String // fd | gsec | corp_bond | debt_fund | ppf | epf | other
+  name         String
+  principal    Float
+  yieldPct     Float?
+  maturityDate DateTime?
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
