@@ -175,4 +175,6 @@ Locks in the analysis engine and data helpers with fast, deterministic unit test
 - A small refactor extracted a pure **`holdings-csv.ts`** (parse + RFC-4180 cell escaping) out of the server action and export route so it's unit-testable.
 - **GitHub Actions CI** (`.github/workflows/ci.yml`): typecheck + test + build on every push to `main` and PR.
 
-**Not unit-tested by design:** the IO clients (mfapi/kuvera/mfdata/merge/cache/http) and orchestration (`analyze.ts`) — these are integration code best exercised against live/recorded responses.
+**Integration tests:** opt-in live tests (`npm run test:integration`, gated by `RUN_INTEGRATION`) hit the real mfapi / Kuvera / mfdata APIs and the `buildFundProfile` merge. They're tolerant of the flaky mfdata.in feed (which the merge layer degrades around) and are skipped by the default suite / CI so offline runs stay green.
+
+**Still not auto-tested:** orchestration (`analyze.ts`) and the low-level `cache`/`http` plumbing — exercised indirectly via the merge integration test and the live app.
