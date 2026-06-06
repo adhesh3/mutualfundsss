@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { fetchScheme } from "@/lib/data/mfapi";
 import { assetClassFor, classifyCategory } from "@/lib/data/categorize";
+import { parseHoldingsCsv } from "@/lib/data/holdings-csv";
 
 /** Identity needed to attach a holding to a fund (the Fund row may not exist yet). */
 export interface HoldingFundInput {
@@ -101,38 +102,17 @@ export interface ImportResult {
  * looking up the scheme code on mfapi, so the user only needs the code + lot.
  */
 export async function importHoldingsCsv(csv: string): Promise<ImportResult> {
-  const errors: string[] = [];
+  const { rows, errors } = parseHoldingsCsv(csv);
   let added = 0;
 
-  const lines = csv
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
-
-  for (const [i, line] of lines.entries()) {
-    const cols = line.split(",").map((c) => c.trim());
-    const schemeCode = Number(cols[0]);
-    // Skip an obvious header row.
-    if (i === 0 && !Number.isFinite(schemeCode)) continue;
-
-    const units = Number(cols[1]);
-    const avgCostNav = Number(cols[2]);
-    if (!Number.isFinite(schemeCode) || schemeCode <= 0) {
-      errors.push(`Row ${i + 1}: invalid AMFI code "${cols[0]}".`);
-      continue;
-    }
-    if (!Number.isFinite(units) || units <= 0 || !Number.isFinite(avgCostNav) || avgCostNav <= 0) {
-      errors.push(`Row ${i + 1}: invalid units / avg cost.`);
-      continue;
-    }
-
+  for (const row of rows) {
     // Auto-fill identity from mfapi; degrade gracefully if it's unavailable.
-    let fund: HoldingFundInput = { schemeCode, name: `Scheme ${schemeCode}` };
+    let fund: HoldingFundInput = { schemeCode: row.schemeCode, name: `Scheme ${row.schemeCode}` };
     try {
-      const scheme = await fetchScheme(schemeCode);
+      const scheme = await fetchScheme(row.schemeCode);
       const category = classifyCategory(scheme.schemeCategoryRaw);
       fund = {
-        schemeCode,
+        schemeCode: row.schemeCode,
         isin: scheme.isin,
         name: scheme.name,
         amc: scheme.amc,
@@ -140,11 +120,11 @@ export async function importHoldingsCsv(csv: string): Promise<ImportResult> {
         assetClass: assetClassFor(category, scheme.schemeCategoryRaw),
       };
     } catch {
-      errors.push(`Row ${i + 1}: couldn't look up scheme ${schemeCode}; imported with minimal details.`);
+      errors.push(`Scheme ${row.schemeCode}: couldn't look up details; imported with minimal info.`);
     }
 
     const fundId = await ensureFund(fund);
-    await mergeLot(fundId, units, avgCostNav);
+    await mergeLot(fundId, row.units, row.avgCostNav);
     added++;
   }
 

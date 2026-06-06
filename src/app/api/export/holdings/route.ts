@@ -1,14 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { valueHoldings } from "@/lib/analysis/valuation";
+import { toCsvRow } from "@/lib/data/holdings-csv";
 
 export const dynamic = "force-dynamic";
-
-/** Wrap a CSV cell, escaping quotes/commas/newlines per RFC 4180. */
-function cell(value: string | number | null | undefined): string {
-  if (value == null) return "";
-  const s = String(value);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
 
 export async function GET() {
   const holdings = await prisma.holding.findMany({
@@ -57,7 +51,7 @@ export async function GET() {
     ];
   });
 
-  const csv = [header, ...rows].map((r) => r.map(cell).join(",")).join("\n");
+  const csv = [header, ...rows].map(toCsvRow).join("\n");
   const date = new Date().toISOString().slice(0, 10);
 
   return new Response(csv, {

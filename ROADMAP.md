@@ -18,6 +18,7 @@ The nice part: the data layer and analysis engine are the hard parts, and they'r
 | 10 | Alerts & buy/rebalance signals | ✅ Done |
 | — | Scheduled NAV refresh / CSV import / export | ✅ Done |
 | — | Deployment (Vercel + Turso ready) | ✅ Done |
+| 11 | Test coverage + CI | ✅ Done |
 
 ---
 
@@ -161,3 +162,17 @@ The app is local-first (SQLite) but now deploys cleanly:
 - See the README's **Deploy** section for the step-by-step (provision Turso → `prisma db push` → set env → deploy).
 
 The only steps that must happen outside this repo are provisioning the Turso DB and running the actual Vercel deploy.
+
+---
+
+## Phase 11 — Test coverage + CI (done)
+
+Locks in the analysis engine and data helpers with fast, deterministic unit tests.
+
+**What shipped:**
+- **9 spec files / 81 tests** (Vitest) covering `format`, `categorize`, `allocation`, `recommend` (verdict thresholds, debt reweighting, mode/horizon/suitability, NFO scorer), `signals`, `valuation` (mfapi mocked), `nfo`, the CSV parser, plus the pre-existing `metrics` suite.
+- **Coverage reporting** via `@vitest/coverage-v8` (`npm run test:coverage`), scoped to the unit-tested pure surface (network/DB clients excluded) — ~94% statements / 97% functions.
+- A small refactor extracted a pure **`holdings-csv.ts`** (parse + RFC-4180 cell escaping) out of the server action and export route so it's unit-testable.
+- **GitHub Actions CI** (`.github/workflows/ci.yml`): typecheck + test + build on every push to `main` and PR.
+
+**Not unit-tested by design:** the IO clients (mfapi/kuvera/mfdata/merge/cache/http) and orchestration (`analyze.ts`) — these are integration code best exercised against live/recorded responses.
