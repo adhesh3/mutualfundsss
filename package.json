@@ -16,6 +16,7 @@
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "refresh:nav": "curl -fsS http://localhost:3000/api/refresh && echo",
+    "precompute": "curl -fsS \"http://localhost:3000/api/precompute?cap=100000\" && echo",
     "postinstall": "prisma generate"
   },
   "prisma": {

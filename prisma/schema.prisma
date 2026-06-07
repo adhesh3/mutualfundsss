@@ -75,6 +75,33 @@ model Holding {
   @@index([fundId])
 }
 
+/// Precomputed catalog of the whole fund universe (from AMFI NAVAll) plus
+/// trailing returns for a subset, used by the /funds explorer. Separate from
+/// `Fund`, which is the user-curated watchlist/holdings.
+model FundCatalogEntry {
+  schemeCode    Int       @id
+  name          String
+  amc           String?
+  categoryRaw   String?
+  category      String? // mapped FundCategory (see src/lib/config.ts)
+  assetClass    String? // equity | debt | hybrid | gold | other
+  isin          String?
+  plan          String    @default("other") // direct | regular | other
+  kind          String    @default("other") // growth | idcw | other
+  latestNav     Float?
+  navDate       String?
+  r1y           Float? // trailing 1y return (fraction)
+  r3y           Float? // trailing 3y CAGR (fraction)
+  r5y           Float? // trailing 5y CAGR (fraction)
+  returnsSource String? // kuvera | computed
+  returnsAt     DateTime?
+  updatedAt     DateTime  @updatedAt
+
+  @@index([category])
+  @@index([plan])
+  @@index([kind])
+}
+
 /// Manually tracked fixed-income holdings (no good free Indian bond API).
 model FixedIncomeInstrument {
   id           String    @id @default(cuid())

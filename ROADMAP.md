@@ -19,6 +19,7 @@ The nice part: the data layer and analysis engine are the hard parts, and they'r
 | — | Scheduled NAV refresh / CSV import / export | ✅ Done |
 | — | Deployment (Vercel + Turso ready) | ✅ Done |
 | 11 | Test coverage + CI | ✅ Done |
+| 12 | Fund explorer (browse + returns) | ✅ Done |
 
 ---
 
@@ -178,3 +179,18 @@ Locks in the analysis engine and data helpers with fast, deterministic unit test
 **Integration tests:** opt-in live tests (`npm run test:integration`, gated by `RUN_INTEGRATION`) hit the real mfapi / Kuvera / mfdata APIs and the `buildFundProfile` merge. They're tolerant of the flaky mfdata.in feed (which the merge layer degrades around) and are skipped by the default suite / CI so offline runs stay green.
 
 **Still not auto-tested:** orchestration (`analyze.ts`) and the low-level `cache`/`http` plumbing — exercised indirectly via the merge integration test and the live app.
+
+---
+
+## Phase 12 — Fund explorer (done)
+
+Lets you discover funds by browsing/sorting instead of having to type a known name.
+
+**What shipped:**
+- A new `FundCatalogEntry` table (catalog + nullable returns) and an **AMFI NAVAll** parser (`src/lib/data/amfi.ts`) that maps the whole universe to category / AMC / plan / kind / latest NAV / ISIN.
+- A precompute job (`src/lib/data/catalog.ts`, `precomputeCatalog`): upserts the catalog (preserving returns) and **incrementally fills 1Y/3Y/5Y returns** for the Direct-Growth equity+hybrid slice from Kuvera, concurrency-limited, capped per run, and staleness-aware.
+- `GET /api/precompute` (CRON_SECRET-guarded) + a daily `vercel.json` cron + `npm run precompute` for a full local warm.
+- The **/funds Explore page** (in the nav, plus a dashboard shortcut): filter by category / plan / type / AMC / name, sortable returns columns, pagination, and per-row Analyze / Watch / Add-to-portfolio.
+- Unit test for the AMFI parser + an opt-in live catalog test.
+
+**Tradeoff:** returns are precomputed for the most-browsed slice (Direct-Growth equity+hybrid) and fill in over a few runs; latest NAV is available for the entire universe immediately. Explore returns (Kuvera) are a quick comparison aid; the Analyze page's cleaned-NAV metrics remain the source of truth.

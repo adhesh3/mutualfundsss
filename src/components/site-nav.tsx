@@ -1,11 +1,12 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, LineChart, ListFilter, Landmark, UserCog, TrendingUp, Wallet, Sparkles, Bell } from "lucide-react";
+import { LayoutDashboard, LineChart, ListFilter, Landmark, UserCog, TrendingUp, Wallet, Sparkles, Bell, Compass } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const nav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/funds", label: "Explore", icon: Compass },
   { href: "/analyze", label: "Analyze", icon: LineChart },
   { href: "/screener", label: "Screener", icon: ListFilter },
   { href: "/portfolio", label: "Portfolio", icon: Wallet },

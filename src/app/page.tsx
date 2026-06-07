@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LineChart, ListFilter, Landmark, Wallet, Bell } from "lucide-react";
+import { LineChart, ListFilter, Landmark, Wallet, Bell, Compass } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -93,6 +93,11 @@ export default async function DashboardPage() {
         </div>
         <div className="flex gap-2">
           <Button asChild>
+            <Link href="/funds">
+              <Compass className="h-4 w-4" /> Explore funds
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link href="/analyze">
               <LineChart className="h-4 w-4" /> Analyze a fund
             </Link>

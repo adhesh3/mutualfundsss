@@ -54,6 +54,12 @@ First run: open **Profile**, set your risk tolerance and horizon. Then go to **A
 | `npm run db:push` | Apply the Prisma schema to SQLite |
 | `npm run db:studio` | Browse the local database |
 | `npm run refresh:nav` | Pre-warm the NAV cache (curls `/api/refresh`; dev server must be running) |
+| `npm run precompute` | Build the fund catalog + returns for the Explore page (curls `/api/precompute`; dev server must be running) |
+
+## Exploring funds
+
+- The **Explore** page (`/funds`) lists the whole fund universe (from AMFI), filterable by category, plan, type and AMC, with precomputed, sortable **1Y / 3Y / 5Y returns** for Direct-Growth equity & hybrid funds. Click any fund to analyze, watch, or add it - no need to know its name.
+- The catalog + returns are built by `GET /api/precompute` (scheduled daily via `vercel.json`, or run `npm run precompute` locally). Returns fill in incrementally over runs; run it a few times for full coverage.
 
 ## Importing & exporting
 
